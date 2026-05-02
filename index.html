@@ -72,7 +72,7 @@ function startGame(){
     initGame();
 }
 
-// MÚSICA
+// ===== MÚSICA =====
 const music = document.getElementById("bgMusic");
 const btn = document.getElementById("musicBtn");
 
@@ -91,75 +91,70 @@ btn.onclick = ()=>{
     playing = !playing;
 };
 
-// VIDA
-let hp=100;
-const hpBar=document.getElementById("hp");
+// ===== VIDA =====
+let hp = 100;
+const hpBar = document.getElementById("hp");
 
 function damage(d){
-    hp-=d;
-    if(hp<0) hp=0;
-    hpBar.style.width=hp+"%";
-    if(hp<=0) respawn(true);
+    hp -= d;
+    if(hp < 0) hp = 0;
+    hpBar.style.width = hp + "%";
+    if(hp <= 0) respawn(true);
 }
 
-// JOGO
+// ===== JOGO =====
 function initGame(){
 
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x87ceeb);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+const camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
 
-const renderer=new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth,window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// TEXTURA DO STEVE (LINK DIRETO)
+// ===== SKIN =====
 const texture = new THREE.TextureLoader().load(
 "https://www.minecraftskins.com/uploads/skins/2021/06/30/steve-colection-clacic-steve-18268849.png?v951"
 );
 
-// PLAYER
-const player=new THREE.Group();
+// ===== PLAYER =====
+const player = new THREE.Group();
 player.scale.set(0.6,0.6,0.6);
 
-function cube(w,h,d){
+function box(w,h,d){
     return new THREE.Mesh(
         new THREE.BoxGeometry(w,h,d),
         new THREE.MeshBasicMaterial({ map: texture })
     );
 }
 
-// corpo
-const body=cube(1.5,2,0.8); body.position.y=1; player.add(body);
+const body = box(1.5,2,0.8); body.position.y = 1; player.add(body);
+const head = box(1,1,1); head.position.y = 2.5; player.add(head);
 
-// cabeça
-const head=cube(1,1,1); head.position.y=2.5; player.add(head);
-
-// braços
-function arm(x){ let m=cube(0.5,1.8,0.5); m.position.set(x,1.2,0); return m;}
+function arm(x){ let m=box(0.5,1.8,0.5); m.position.set(x,1.2,0); return m;}
 player.add(arm(-1.2)); player.add(arm(1.2));
 
-// pernas
-const leftLeg=cube(0.6,2,0.6); leftLeg.position.set(-0.4,-1,0);
-const rightLeg=cube(0.6,2,0.6); rightLeg.position.set(0.4,-1,0);
+const leftLeg = box(0.6,2,0.6); leftLeg.position.set(-0.4,-1,0);
+const rightLeg = box(0.6,2,0.6); rightLeg.position.set(0.4,-1,0);
 player.add(leftLeg); player.add(rightLeg);
 
 player.position.set(0,3,0);
 scene.add(player);
 
-// CHÃO
-const ground=new THREE.Mesh(
+// ===== CHÃO =====
+const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(500,500),
     new THREE.MeshBasicMaterial({color:0x228B22})
 );
-ground.rotation.x=-Math.PI/2;
+ground.rotation.x = -Math.PI/2;
 scene.add(ground);
 
-// PLATAFORMAS
-const platforms=[];
+// ===== PLATAFORMAS =====
+const platforms = [];
 function plat(x,y,z,c){
- let m=new THREE.Mesh(
+ let m = new THREE.Mesh(
      new THREE.BoxGeometry(3,1,3),
      new THREE.MeshBasicMaterial({color:c})
  );
@@ -174,133 +169,146 @@ plat(15,6,12,0xffff00);
 plat(20,8,16,0xff00ff);
 plat(25,10,20,0x00ffff);
 
-// CONTROLES
-let keys={};
+// ===== CONTROLES =====
+let keys = {};
 window.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
 window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-// CÂMERA
-let rotating=false;
-let rotationY=0;
+// ===== CÂMERA (BOTÃO + SHIFT + MOBILE) =====
+let rotating = false;
+let shiftPressed = false;
+let rotationY = 0;
 
-window.addEventListener("mousedown",e=>{ if(e.button===2) rotating=true; });
+window.addEventListener("keydown",e=>{
+    if(e.key === "Shift") shiftPressed = true;
+});
+window.addEventListener("keyup",e=>{
+    if(e.key === "Shift") shiftPressed = false;
+});
+
+window.addEventListener("mousedown",e=>{
+    if(e.button === 2) rotating = true;
+});
 window.addEventListener("mouseup",()=>rotating=false);
 window.addEventListener("contextmenu",e=>e.preventDefault());
 
 window.addEventListener("mousemove",e=>{
- if(rotating) rotationY-=e.movementX*0.003;
+    if(rotating || shiftPressed){
+        rotationY -= e.movementX * 0.003;
+    }
 });
 
 // MOBILE
-let lastTouchX=0;
-window.addEventListener("touchstart",e=>{ lastTouchX=e.touches[0].clientX; });
+let lastTouchX = 0;
+window.addEventListener("touchstart",e=>{
+    lastTouchX = e.touches[0].clientX;
+});
 window.addEventListener("touchmove",e=>{
- let dx=e.touches[0].clientX-lastTouchX;
- rotationY-=dx*0.005;
- lastTouchX=e.touches[0].clientX;
+    let dx = e.touches[0].clientX - lastTouchX;
+    rotationY -= dx * 0.005;
+    lastTouchX = e.touches[0].clientX;
 });
 
-// FÍSICA
-let velocityY=0;
-let onGround=false;
+// ===== FÍSICA =====
+let velocityY = 0;
+let onGround = false;
 
 function jump(){
- if(onGround){
-  velocityY=0.25;
-  onGround=false;
- }
+    if(onGround){
+        velocityY = 0.25;
+        onGround = false;
+    }
 }
 
-// COLISÃO
+// ===== COLISÃO =====
 function checkCollision(){
- onGround=false;
+    onGround = false;
 
- platforms.forEach(p=>{
-  const dx=Math.abs(player.position.x-p.position.x);
-  const dz=Math.abs(player.position.z-p.position.z);
-  const dy=player.position.y-(p.position.y+0.5);
+    platforms.forEach(p=>{
+        const dx = Math.abs(player.position.x - p.position.x);
+        const dz = Math.abs(player.position.z - p.position.z);
+        const dy = player.position.y - (p.position.y + 0.5);
 
-  if(dx<2&&dz<2&&dy<1&&dy>0){
-   player.position.y=p.position.y+1.5;
-   velocityY=0;
-   onGround=true;
-  }
- });
+        if(dx < 2 && dz < 2 && dy < 1 && dy > 0){
+            player.position.y = p.position.y + 1.5;
+            velocityY = 0;
+            onGround = true;
+        }
+    });
 
- if(player.position.y<=1.5){
-  player.position.y=1.5;
-  velocityY=0;
-  onGround=true;
- }
+    if(player.position.y <= 1.5){
+        player.position.y = 1.5;
+        velocityY = 0;
+        onGround = true;
+    }
 }
 
-// RESPAWN
+// ===== RESPAWN =====
 function respawn(reset=false){
- player.position.set(0,3,0);
- velocityY=0;
- if(reset){
-  hp=100;
-  hpBar.style.width="100%";
- }
+    player.position.set(0,3,0);
+    velocityY = 0;
+    if(reset){
+        hp = 100;
+        hpBar.style.width = "100%";
+    }
 }
 
-// LOOP
+// ===== LOOP =====
 function animate(){
- requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 
- let speed=0.12;
+    let speed = 0.12;
 
- let moveX=0;
- let moveZ=0;
+    let moveX = 0;
+    let moveZ = 0;
 
- if(keys["w"]) moveZ-=1;
- if(keys["s"]) moveZ+=1;
- if(keys["a"]) moveX-=1;
- if(keys["d"]) moveX+=1;
+    if(keys["w"]) moveZ -= 1;
+    if(keys["s"]) moveZ += 1;
+    if(keys["a"]) moveX -= 1;
+    if(keys["d"]) moveX += 1;
 
- let forwardX=Math.sin(rotationY);
- let forwardZ=Math.cos(rotationY);
+    let forwardX = Math.sin(rotationY);
+    let forwardZ = Math.cos(rotationY);
 
- let rightX=Math.sin(rotationY+Math.PI/2);
- let rightZ=Math.cos(rotationY+Math.PI/2);
+    let rightX = Math.sin(rotationY + Math.PI/2);
+    let rightZ = Math.cos(rotationY + Math.PI/2);
 
- let finalX=(forwardX*moveZ + rightX*moveX)*speed;
- let finalZ=(forwardZ*moveZ + rightZ*moveX)*speed;
+    let finalX = (forwardX * moveZ + rightX * moveX) * speed;
+    let finalZ = (forwardZ * moveZ + rightZ * moveX) * speed;
 
- player.position.x+=finalX;
- player.position.z+=finalZ;
+    player.position.x += finalX;
+    player.position.z += finalZ;
 
- if(moveX!==0||moveZ!==0){
-  let angle=Math.atan2(finalX,finalZ);
-  player.rotation.y=angle;
- }
+    if(moveX !== 0 || moveZ !== 0){
+        player.rotation.y = Math.atan2(finalX, finalZ);
+    }
 
- let walk=Math.sin(Date.now()*0.01)*0.5;
- if(moveX!==0||moveZ!==0){
-  leftLeg.rotation.x=walk;
-  rightLeg.rotation.x=-walk;
- }
+    let walk = Math.sin(Date.now()*0.01)*0.5;
+    if(moveX !== 0 || moveZ !== 0){
+        leftLeg.rotation.x = walk;
+        rightLeg.rotation.x = -walk;
+    }
 
- if(keys[" "]) jump();
+    if(keys[" "]) jump();
 
- velocityY-=0.01;
- player.position.y+=velocityY;
+    velocityY -= 0.01;
+    player.position.y += velocityY;
 
- checkCollision();
+    checkCollision();
 
- if(player.position.y<-10){
-  damage(25);
-  respawn();
- }
+    if(player.position.y < -10){
+        damage(25);
+        respawn();
+    }
 
- camera.position.set(
-  player.position.x + Math.sin(rotationY)*6,
-  player.position.y + 4,
-  player.position.z + Math.cos(rotationY)*6
- );
- camera.lookAt(player.position);
+    camera.position.set(
+        player.position.x + Math.sin(rotationY)*6,
+        player.position.y + 4,
+        player.position.z + Math.cos(rotationY)*6
+    );
+    camera.lookAt(player.position);
 
- renderer.render(scene,camera);
+    renderer.render(scene,camera);
 }
 
 animate();
